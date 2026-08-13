@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" F ","MSM"," G "],"key":{"F":{"item":"minecraft:fermented_spider_eye"},"M":{"item":"minecraft:milk_bucket"},"S":{"item":"humanaugmentation:sterile_syringe"},"G":{"item":"minecraft:gold_ingot"}},"result":{"id":"humanaugmentation:gene_purge","count":1}}

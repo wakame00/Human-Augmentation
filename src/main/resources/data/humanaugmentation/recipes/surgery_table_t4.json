@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["NEN","STS","NLN"],"key":{"N":{"item":"minecraft:netherite_ingot"},"E":{"item":"minecraft:echo_shard"},"S":{"item":"minecraft:calibrated_sculk_sensor"},"T":{"item":"humanaugmentation:surgery_table_t3"},"L":{"item":"humanaugmentation:life_support_module"}},"result":{"id":"humanaugmentation:surgery_table_t4","count":1}}

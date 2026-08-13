@@ -1,0 +1,1 @@
+{"variants":{"facing=north":{"model":"humanaugmentation:block/creative_fe_source"},"facing=east":{"model":"humanaugmentation:block/creative_fe_source","y":90},"facing=south":{"model":"humanaugmentation:block/creative_fe_source","y":180},"facing=west":{"model":"humanaugmentation:block/creative_fe_source","y":270}}}

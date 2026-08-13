@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" I ","GCG"," I "],"key":{"I":{"item":"minecraft:iron_ingot"},"G":{"item":"minecraft:glass_pane"},"C":{"item":"minecraft:copper_ingot"}},"result":{"id":"humanaugmentation:dna_sampler","count":1}}

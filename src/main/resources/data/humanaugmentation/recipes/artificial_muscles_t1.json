@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["SRS","LCL","SRS"],"key":{"S":{"item":"minecraft:string"},"R":{"item":"minecraft:redstone"},"L":{"item":"minecraft:leather"},"C":{"item":"minecraft:copper_ingot"}},"result":{"id":"humanaugmentation:artificial_muscles_t1","count":1}}

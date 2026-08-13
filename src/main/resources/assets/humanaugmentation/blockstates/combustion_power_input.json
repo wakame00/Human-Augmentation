@@ -1,0 +1,1 @@
+{"variants":{"facing=north":{"model":"humanaugmentation:block/combustion_power_input"},"facing=east":{"model":"humanaugmentation:block/combustion_power_input","y":90},"facing=south":{"model":"humanaugmentation:block/combustion_power_input","y":180},"facing=west":{"model":"humanaugmentation:block/combustion_power_input","y":270}}}

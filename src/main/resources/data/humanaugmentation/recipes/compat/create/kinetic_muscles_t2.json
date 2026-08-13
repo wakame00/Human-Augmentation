@@ -1,0 +1,39 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "create"
+    },
+    {
+      "type": "neoforge:registered",
+      "registry": "minecraft:item",
+      "value": "create:precision_mechanism"
+    },
+    {
+      "type": "neoforge:registered",
+      "registry": "minecraft:item",
+      "value": "create:andesite_alloy"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AMA",
+    "MCM",
+    "AMA"
+  ],
+  "key": {
+    "A": {
+      "item": "create:andesite_alloy"
+    },
+    "M": {
+      "item": "humanaugmentation:artificial_muscles_t1"
+    },
+    "C": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "result": {
+    "id": "humanaugmentation:kinetic_muscles_t2",
+    "count": 1
+  }
+}

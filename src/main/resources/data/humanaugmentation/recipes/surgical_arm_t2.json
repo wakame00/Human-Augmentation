@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" QR","QAR"," QR"],"key":{"Q":{"item":"minecraft:quartz"},"R":{"item":"minecraft:redstone"},"A":{"item":"humanaugmentation:surgical_arm"}},"result":{"id":"humanaugmentation:surgical_arm_t2","count":1}}

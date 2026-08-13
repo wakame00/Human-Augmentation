@@ -1,0 +1,1 @@
+{"variants":{"facing=north":{"model":"humanaugmentation:block/dna_analyzer"},"facing=east":{"model":"humanaugmentation:block/dna_analyzer","y":90},"facing=south":{"model":"humanaugmentation:block/dna_analyzer","y":180},"facing=west":{"model":"humanaugmentation:block/dna_analyzer","y":270}}}

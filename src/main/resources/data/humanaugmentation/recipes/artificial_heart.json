@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["IRI","RHR","IRI"],"key":{"I":{"item":"minecraft:iron_ingot"},"R":{"item":"minecraft:redstone"},"H":{"item":"minecraft:fermented_spider_eye"}},"result":{"id":"humanaugmentation:artificial_heart","count":1}}

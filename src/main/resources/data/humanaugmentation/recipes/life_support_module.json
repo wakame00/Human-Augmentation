@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["GHG","ECE","GRG"],"key":{"G":{"item":"minecraft:ghast_tear"},"H":{"item":"minecraft:heart_of_the_sea"},"E":{"item":"minecraft:ender_eye"},"C":{"item":"humanaugmentation:precision_control_module"},"R":{"item":"minecraft:recovery_compass"}},"result":{"id":"humanaugmentation:life_support_module","count":1}}

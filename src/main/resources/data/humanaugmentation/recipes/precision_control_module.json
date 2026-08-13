@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["RQR","QEQ","RQR"],"key":{"R":{"item":"minecraft:redstone"},"Q":{"item":"minecraft:quartz"},"E":{"item":"minecraft:ender_eye"}},"result":{"id":"humanaugmentation:precision_control_module","count":1}}

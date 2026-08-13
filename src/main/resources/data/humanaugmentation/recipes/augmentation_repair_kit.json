@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["IRI","CLC"," I "],"key":{"I":{"item":"minecraft:iron_ingot"},"R":{"item":"minecraft:redstone"},"C":{"item":"minecraft:copper_ingot"},"L":{"item":"minecraft:leather"}},"result":{"id":"humanaugmentation:augmentation_repair_kit","count":1}}

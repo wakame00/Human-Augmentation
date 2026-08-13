@@ -1,0 +1,1 @@
+{"variants":{"facing=north":{"model":"humanaugmentation:block/surgery_table"},"facing=east":{"model":"humanaugmentation:block/surgery_table","y":90},"facing=south":{"model":"humanaugmentation:block/surgery_table","y":180},"facing=west":{"model":"humanaugmentation:block/surgery_table","y":270}}}

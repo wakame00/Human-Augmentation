@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["CCC","CFC","CCC"],"key":{"C":{"item":"minecraft:copper_ingot"},"F":{"item":"humanaugmentation:medical_frame"}},"result":{"id":"humanaugmentation:medical_frame_t2","count":1}}

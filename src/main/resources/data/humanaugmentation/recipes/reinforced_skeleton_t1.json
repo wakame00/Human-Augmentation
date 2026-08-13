@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["IBI","BCB","IBI"],"key":{"I":{"item":"minecraft:iron_ingot"},"B":{"item":"minecraft:bone_block"},"C":{"item":"minecraft:copper_ingot"}},"result":{"id":"humanaugmentation:reinforced_skeleton_t1","count":1}}

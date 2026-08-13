@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["DED","STS","DCD"],"key":{"D":{"item":"minecraft:diamond"},"E":{"item":"minecraft:echo_shard"},"S":{"item":"minecraft:sculk_sensor"},"T":{"item":"humanaugmentation:surgery_table_t2"},"C":{"item":"humanaugmentation:precision_control_module"}},"result":{"id":"humanaugmentation:surgery_table_t3","count":1}}
