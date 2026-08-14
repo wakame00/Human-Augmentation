@@ -2,18 +2,19 @@ local interval = 5
 local WebhookURL = "a"
 
 local friendly_players = {
-    ["Riii3393"] = true,
-    ["TPparu"] = true,
-    ["wakame_00"] = true,
-    ["rat495"] = true,
-    ["PEIN9391"] = true,
-    ["Tanuk1"] = true,
-    ["pan468213"] = true,
-    ["SuD_uki_mark2"] = true,
-    ["Re_Nameco"] = true,
-    ["seto4979"] = true,
-    ["Norinorinoriri"] = true, 
-    ["pto_Aive2836"] = true,   
+    Riii3393 = true,
+    TPparu = true,
+    wakame_00 = true,
+    rat495 = true,
+    PEIN9391 = true,
+    Tanuk1 = true,
+    pan468213 = true,
+    SuD_uki_mark2 = true,
+    Re_Nameco = true,
+    seto4979 = true,
+    Norinorinoriri = true, 
+    pto_Aive2836 = true,   
+    Kanpan13279 = true,  
 }
 
 local player_info = peripheral.find("playerDetector") or peripheral.find("player_detector")
