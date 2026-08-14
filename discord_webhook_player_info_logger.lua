@@ -1,5 +1,5 @@
 local interval = 5
-local WebhookURL = "ここにあなたのDiscordのURL"
+local WebhookURL = "a"
 
 local player_info = peripheral.find("playerDetector") or peripheral.find("player_detector")
 
