@@ -34,15 +34,14 @@ end
 
 print("System started...")
 
+local last_all_info = ""
+
 while true do
     local friend_info = ""
     local enemy_info = ""
     local players = player_info.getOnlinePlayers()
     
-    local game_time = os.time()
-    local hours = math.floor(game_time)
-    local minutes = math.floor((game_time - hours) * 60)
-    local time_str = string.format("[%02d:%02d]", hours, minutes)
+    local time_str = string.format("[%s]", os.date("%H:%M:%S"))
     
     for i, player_name in next, players do
         local player = player_info.getPlayerPos(player_name)
@@ -73,7 +72,7 @@ while true do
         all_info = all_info .. "\n[Enemy Team]" .. enemy_info
     end
     
-    if all_info ~= "" then
+    if all_info ~= "" and all_info ~= last_all_info then
         local payload = textutils.serialiseJSON({
             content = "[Radar Log]" .. all_info
         })
@@ -82,6 +81,8 @@ while true do
         if response then
             print("Success")
             response.close()
+            -- 送信に成功したら、今回の内容を記憶する
+            last_all_info = all_info
         else
             print("Failed")
         end
