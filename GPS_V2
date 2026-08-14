@@ -1,4 +1,4 @@
-local interval = 5
+local interval = 30
 local WebhookURL = "a"
 
 local friendly_players = {
@@ -34,18 +34,22 @@ end
 
 print("System started...")
 
-local last_all_info = ""
+local last_data_content = ""
 
 while true do
     local friend_info = ""
     local enemy_info = ""
+    local raw_friend_info = ""
+    local raw_enemy_info = ""
+    
     local players = player_info.getOnlinePlayers()
     
     local time_str = string.format("[%s]", os.date("%H:%M:%S"))
     
     for i, player_name in next, players do
         local player = player_info.getPlayerPos(player_name)
-        local info = player_name .. "   nil"
+        local info_without_time = player_name .. "   nil"
+        
         if player ~= nil then
             local hp_str = "HP=" .. (player.health and math.floor(player.health) or "unknown")
             
@@ -54,13 +58,15 @@ while true do
                 respawn_str = "Respawn(X=" .. math.floor(player.respawnPosition.x) .. " Y=" .. math.floor(player.respawnPosition.y) .. " Z=" .. math.floor(player.respawnPosition.z) .. ")"
             end
             
-            info = player_name .. " X=" .. math.floor(player.x) .. " Y=" .. math.floor(player.y) .. " Z=" .. math.floor(player.z) .. " " .. hp_str .. " " .. respawn_str .. " " .. time_str
+            info_without_time = player_name .. " X=" .. math.floor(player.x) .. " Y=" .. math.floor(player.y) .. " Z=" .. math.floor(player.z) .. " " .. hp_str .. " " .. respawn_str
         end
         
         if friendly_players[player_name] then
-            friend_info = friend_info .. "\n" .. info
+            friend_info = friend_info .. "\n" .. info_without_time
+            raw_friend_info = raw_friend_info .. "\n" .. info_without_time
         else
-            enemy_info = enemy_info .. "\n" .. info
+            enemy_info = enemy_info .. "\n" .. info_without_time
+            raw_enemy_info = raw_enemy_info .. "\n" .. info_without_time
         end
     end
     
@@ -72,17 +78,18 @@ while true do
         all_info = all_info .. "\n[Enemy Team]" .. enemy_info
     end
     
-    if all_info ~= "" and all_info ~= last_all_info then
+    local current_data_content = raw_friend_info .. "|||" .. raw_enemy_info
+    
+    if all_info ~= "" and current_data_content ~= last_data_content then
         local payload = textutils.serialiseJSON({
-            content = "[Radar Log]" .. all_info
+            content = "[Radar Log] " .. time_str .. all_info
         })
         
         local response = http.post(WebhookURL, payload, { ["Content-Type"] = "application/json" })
         if response then
             print("Success")
             response.close()
-            -- 送信に成功したら、今回の内容を記憶する
-            last_all_info = all_info
+            last_data_content = current_data_content
         else
             print("Failed")
         end
