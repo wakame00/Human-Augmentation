@@ -10,6 +10,8 @@ local friendly_players = {
     Tanuk1 = true,
     pan468213 = true,
     SuD_uki_mark2 = true,
+    Re_Nameco = true,
+    seto4979 = true,
 }
 
 local player_info = peripheral.find("playerDetector") or peripheral.find("player_detector")
