@@ -36,8 +36,21 @@ local function refuelAll()
   end
 end
 
+local function clearUp()
+  while turtle.detectUp() do
+    local ok, reason = turtle.digUp()
+
+    if not ok then
+      error("Cannot dig up: " .. tostring(reason))
+    end
+  end
+end
+
 local function moveForward()
   refuelAll()
+
+  -- Make the current tunnel space 2 blocks high.
+  clearUp()
 
   while turtle.detect() do
     local ok, reason = turtle.dig()
@@ -57,6 +70,9 @@ local function moveForward()
   if not ok then
     error("Cannot move forward: " .. tostring(reason))
   end
+
+  -- Clear the upper block at the new position too.
+  clearUp()
 end
 
 local function moveUp()
