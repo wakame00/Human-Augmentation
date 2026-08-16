@@ -1,14 +1,34 @@
 -- rocket.lua
 -- GPS waypoint guidance
 
-local CONTROLLER_SIDE = "bottom"
-
 local POWER = 1.0
 local UPDATE_INTERVAL = 0.05
 local ARRIVAL_RADIUS = 4
 local GPS_TIMEOUT = 3
 
-local controller = peripheral.wrap(CONTROLLER_SIDE)
+local controller
+local controllerName
+
+for _, name in ipairs(peripheral.getNames()) do
+    local p = peripheral.wrap(name)
+
+    if p and p.getVector and p.setTargetVector then
+        controller = p
+        controllerName = name
+        break
+    end
+end
+
+if not controller then
+    print("No flight controller found")
+    print("Visible peripherals:")
+
+    for _, name in ipairs(peripheral.getNames()) do
+        print("- " .. name .. " (" .. tostring(peripheral.getType(name)) .. ")")
+    end
+
+    error("Connect computer directly to controller")
+end
 
 if not controller then
     error("Controller not found: " .. CONTROLLER_SIDE)
