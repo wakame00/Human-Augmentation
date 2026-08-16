@@ -60,8 +60,19 @@ end
 local function setDirection(x, y, z)
     for _, name in ipairs(thrusters) do
         local ok, err = pcall(function()
-            peripheral.call(name, "setTargetVector", x, y, z)
+            peripheral.call(name, "setVector", x, y, z)
         end)
+
+        -- Fallback if this mod expects a vector table.
+        if not ok then
+            ok, err = pcall(function()
+                peripheral.call(name, "setVector", {
+                    x = x,
+                    y = y,
+                    z = z
+                })
+            end)
+        end
 
         if not ok then
             stopAll()
