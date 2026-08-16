@@ -1,0 +1,161 @@
+local POWER = 1.0
+local UPDATE_INTERVAL = 0.05
+local ARRIVAL_RADIUS = 4
+local GPS_TIMEOUT = 3
+
+local controller
+local controllerName
+
+-- Find flight controller
+for _, name in ipairs(peripheral.getNames()) do
+    local p = peripheral.wrap(name)
+
+    if p
+        and p.getVector
+        and p.setTargetVector
+        and p.setPowerNormalized then
+        controller = p
+        controllerName = name
+        break
+    end
+end
+
+if not controller then
+    error("Flight controller not found")
+end
+
+local function setPower(value)
+    value = math.max(0, math.min(1, value))
+
+    if controller.setPowerNormalized then
+        controller.setPowerNormalized(value)
+    elseif controller.setThrust then
+        controller.setThrust(value)
+    else
+        error("Power method not found")
+    end
+end
+
+-- Supports both setTargetVector(x, y, z)
+-- and setTargetVector({x=, y=, z=}) implementations.
+local function setTargetVector(x, y, z)
+    local ok = pcall(function()
+        controller.setTargetVector(x, y, z)
+    end)
+
+    if not ok then
+        local okTable, err = pcall(function()
+            controller.setTargetVector({
+                x = x,
+                y = y,
+                z = z
+            })
+        end)
+
+        if not okTable then
+            error("setTargetVector failed: " .. tostring(err))
+        end
+    end
+end
+
+local function vectorLength(x, y, z)
+    return math.sqrt(x * x + y * y + z * z)
+end
+
+local function readTarget()
+    while true do
+        write("Target X Y Z: ")
+        local line = read()
+
+        local x, y, z = line:match(
+            "^%s*(-?[%d%.]+)%s+(-?[%d%.]+)%s+(-?[%d%.]+)%s*$"
+        )
+
+        x = tonumber(x)
+        y = tonumber(y)
+        z = tonumber(z)
+
+        if x and y and z then
+            return x, y, z
+        end
+
+        print("Format: X Y Z")
+        print("Example: 58 63 18")
+    end
+end
+
+local function getGpsPosition()
+    local x, y, z = gps.locate(GPS_TIMEOUT, false)
+
+    if not x then
+        return nil
+    end
+
+    return x, y, z
+end
+
+print("Controller: " .. controllerName)
+
+-- Print current direction/vector for testing
+local ok, currentVector = pcall(function()
+    return controller.getVector()
+end)
+
+if ok then
+    print("Current vector: " .. textutils.serialise(currentVector))
+else
+    print("Current vector: unavailable")
+end
+
+local targetX, targetY, targetZ = readTarget()
+
+print(("Target set: %.1f %.1f %.1f"):format(
+    targetX, targetY, targetZ
+))
+
+-- Confirm before thrust starts
+write("Launch? y/n: ")
+if read():lower() ~= "y" then
+    print("Cancelled")
+    return
+end
+
+setPower(POWER)
+print("Launched")
+
+while true do
+    local x, y, z = getGpsPosition()
+
+    if not x then
+        setPower(0)
+        error("GPS lost - power stopped")
+    end
+
+    local dx = targetX - x
+    local dy = targetY - y
+    local dz = targetZ - z
+    local distance = vectorLength(dx, dy, dz)
+
+    if distance <= ARRIVAL_RADIUS then
+        setPower(0)
+        print("Arrived - power stopped")
+        break
+    end
+
+    -- Normalized direction toward target
+    local nx = dx / distance
+    local ny = dy / distance
+    local nz = dz / distance
+
+    setTargetVector(nx, ny, nz)
+
+    term.setCursorPos(1, 8)
+    term.clearLine()
+    write(("GPS: %.1f %.1f %.1f"):format(x, y, z))
+
+    term.setCursorPos(1, 9)
+    term.clearLine()
+    write(("Distance: %.1f"):format(distance))
+
+    os.sleep(UPDATE_INTERVAL)
+end
