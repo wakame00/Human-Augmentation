@@ -1,88 +1,47 @@
 -- missile.lua
--- Four vector thrusters + GPS guidance
+-- GPS guidance with speed control
 
-local POWER = 1.0
-local UPDATE_INTERVAL = 0.05
-local ARRIVAL_RADIUS = 4
-local GPS_TIMEOUT = 3
+local thrusters = {"back", "front", "right", "left"}
 
--- If the missile flies away from the target, change this to -1.
-local THRUST_SIGN = 1
+local MAX_POWER = 0.12       -- Start low. Raise slowly: 0.15, 0.20...
+local MAX_SPEED = 8          -- blocks per second
+local UPDATE_INTERVAL = 0.15
+local ARRIVAL_RADIUS = 5
+local STOP_SPEED = 0.8
+local THRUST_SIGN = 1        -- Change to -1 if direction is reversed
 
-local thrusters = {
-    "back",
-    "front",
-    "right",
-    "left"
-}
-
-for _, name in ipairs(thrusters) do
-    if not peripheral.isPresent(name) then
-        error("Thruster not found: " .. name)
-    end
+local function clamp(value, minValue, maxValue)
+    return math.max(minValue, math.min(maxValue, value))
 end
 
-print("Thrusters found: " .. #thrusters)
-
-for _, name in ipairs(thrusters) do
-    print("- " .. name)
-end
-
-print("Thrusters found: " .. #thrusters)
-
-for _, name in ipairs(thrusters) do
-    print("- " .. name)
+local function length(x, y, z)
+    return math.sqrt(x * x + y * y + z * z)
 end
 
 local function stopAll()
     for _, name in ipairs(thrusters) do
-        pcall(function()
-            peripheral.call(name, "setPowerNormalized", 0)
-        end)
+        pcall(peripheral.call, name, "setPowerNormalized", 0)
     end
 end
 
-local function setPower(value)
-    value = math.max(0, math.min(1, value))
-
+local function setThrust(vectorX, vectorY, vectorZ, power)
     for _, name in ipairs(thrusters) do
-        local ok, err = pcall(function()
-            peripheral.call(name, "setPowerNormalized", value)
-        end)
-
-        if not ok then
-            stopAll()
-            error("Power error on " .. name .. ": " .. tostring(err))
-        end
-    end
-end
-
-local function setDirection(x, y, z)
-    for _, name in ipairs(thrusters) do
-        local ok, err = pcall(function()
-            peripheral.call(name, "setVector", x, y, z)
-        end)
-
-        -- Fallback if this mod expects a vector table.
-        if not ok then
-            ok, err = pcall(function()
-                peripheral.call(name, "setVector", {
-                    x = x,
-                    y = y,
-                    z = z
-                })
-            end)
-        end
+        local ok, err = pcall(
+            peripheral.call,
+            name,
+            "setVector",
+            vectorX * THRUST_SIGN,
+            vectorY * THRUST_SIGN,
+            vectorZ * THRUST_SIGN
+        )
 
         if not ok then
             stopAll()
             error("Vector error on " .. name .. ": " .. tostring(err))
         end
-    end
-end
 
-local function length(x, y, z)
-    return math.sqrt(x * x + y * y + z * z)
+        peripheral.call(name, "setPowerNormalized", power)
+    end
 end
 
 local function readTarget()
@@ -94,21 +53,20 @@ local function readTarget()
             "^%s*(-?[%d%.]+)%s+(-?[%d%.]+)%s+(-?[%d%.]+)%s*$"
         )
 
-        x = tonumber(x)
-        y = tonumber(y)
-        z = tonumber(z)
+        x, y, z = tonumber(x), tonumber(y), tonumber(z)
 
         if x and y and z then
             return x, y, z
         end
 
         print("Format: X Y Z")
-        print("Example: 58 63 18")
     end
 end
 
-local function getPosition()
-    return gps.locate(GPS_TIMEOUT, false)
+for _, name in ipairs(thrusters) do
+    if not peripheral.isPresent(name) then
+        error("Thruster not found: " .. name)
+    end
 end
 
 local targetX, targetY, targetZ = readTarget()
@@ -120,45 +78,85 @@ print(("Target: %.1f %.1f %.1f"):format(
 write("Launch? y/n: ")
 
 if read():lower() ~= "y" then
-    print("Cancelled")
     return
 end
 
-setPower(POWER)
-print("Launched")
+local previousX, previousY, previousZ
+local previousTime
 
 while true do
-    local x, y, z = getPosition()
+    local x, y, z = gps.locate(3, false)
 
     if not x then
         stopAll()
-        error("GPS lost - stopped")
+        error("GPS lost")
     end
+
+    local now = os.epoch("utc")
+    local velocityX, velocityY, velocityZ = 0, 0, 0
+
+    if previousTime then
+        local deltaTime = (now - previousTime) / 1000
+
+        if deltaTime > 0 then
+            velocityX = (x - previousX) / deltaTime
+            velocityY = (y - previousY) / deltaTime
+            velocityZ = (z - previousZ) / deltaTime
+        end
+    end
+
+    previousX, previousY, previousZ = x, y, z
+    previousTime = now
 
     local dx = targetX - x
     local dy = targetY - y
     local dz = targetZ - z
     local distance = length(dx, dy, dz)
+    local currentSpeed = length(velocityX, velocityY, velocityZ)
 
-    if distance <= ARRIVAL_RADIUS then
+    -- Desired speed decreases near the target.
+    local desiredSpeed = math.min(MAX_SPEED, distance * 0.5)
+
+    local desiredVX = (dx / distance) * desiredSpeed
+    local desiredVY = (dy / distance) * desiredSpeed
+    local desiredVZ = (dz / distance) * desiredSpeed
+
+    -- Accelerate toward desired velocity; reverses thrust to brake.
+    local correctionX = desiredVX - velocityX
+    local correctionY = desiredVY - velocityY
+    local correctionZ = desiredVZ - velocityZ
+    local correctionLength = length(correctionX, correctionY, correctionZ)
+
+    if distance <= ARRIVAL_RADIUS and currentSpeed <= STOP_SPEED then
         stopAll()
         print("Arrived - stopped")
         break
     end
 
-    local nx = (dx / distance) * THRUST_SIGN
-    local ny = (dy / distance) * THRUST_SIGN
-    local nz = (dz / distance) * THRUST_SIGN
+    if correctionLength > 0.01 then
+        local power = clamp(
+            (correctionLength / MAX_SPEED) * MAX_POWER,
+            0,
+            MAX_POWER
+        )
 
-    setDirection(nx, ny, nz)
+        setThrust(
+            correctionX / correctionLength,
+            correctionY / correctionLength,
+            correctionZ / correctionLength,
+            power
+        )
+    else
+        stopAll()
+    end
+
+    term.setCursorPos(1, 8)
+    term.clearLine()
+    write(("Distance: %.1f"):format(distance))
 
     term.setCursorPos(1, 9)
     term.clearLine()
-    write(("GPS: %.1f %.1f %.1f"):format(x, y, z))
-
-    term.setCursorPos(1, 10)
-    term.clearLine()
-    write(("Distance: %.1f"):format(distance))
+    write(("Speed: %.1f"):format(currentSpeed))
 
     os.sleep(UPDATE_INTERVAL)
 end
