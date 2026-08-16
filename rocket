@@ -1,17 +1,27 @@
 -- missile.lua
--- GPS guidance with speed control
+-- Four vector thrusters + GPS takeoff and cruise guidance
 
-local thrusters = {"back", "front", "right", "left"}
+local thrusters = {
+    "back",
+    "front",
+    "right",
+    "left"
+}
 
-local MAX_POWER = 0.12       -- Start low. Raise slowly: 0.15, 0.20...
-local MAX_SPEED = 8          -- blocks per second
+local MAX_POWER = 0.12
+local MAX_SPEED = 8
+local TAKEOFF_HEIGHT = 80
+local TAKEOFF_SPEED = 4
+
 local UPDATE_INTERVAL = 0.15
 local ARRIVAL_RADIUS = 5
 local STOP_SPEED = 0.8
-local THRUST_SIGN = 1        -- Change to -1 if direction is reversed
 
-local function clamp(value, minValue, maxValue)
-    return math.max(minValue, math.min(maxValue, value))
+-- Set to -1 only if thrust direction is reversed.
+local THRUST_SIGN = 1
+
+local function clamp(value, minimum, maximum)
+    return math.max(minimum, math.min(maximum, value))
 end
 
 local function length(x, y, z)
@@ -24,15 +34,15 @@ local function stopAll()
     end
 end
 
-local function setThrust(vectorX, vectorY, vectorZ, power)
+local function setThrust(x, y, z, power)
     for _, name in ipairs(thrusters) do
         local ok, err = pcall(
             peripheral.call,
             name,
             "setVector",
-            vectorX * THRUST_SIGN,
-            vectorY * THRUST_SIGN,
-            vectorZ * THRUST_SIGN
+            x * THRUST_SIGN,
+            y * THRUST_SIGN,
+            z * THRUST_SIGN
         )
 
         if not ok then
@@ -40,7 +50,17 @@ local function setThrust(vectorX, vectorY, vectorZ, power)
             error("Vector error on " .. name .. ": " .. tostring(err))
         end
 
-        peripheral.call(name, "setPowerNormalized", power)
+        local powerOk, powerErr = pcall(
+            peripheral.call,
+            name,
+            "setPowerNormalized",
+            power
+        )
+
+        if not powerOk then
+            stopAll()
+            error("Power error on " .. name .. ": " .. tostring(powerErr))
+        end
     end
 end
 
@@ -53,13 +73,16 @@ local function readTarget()
             "^%s*(-?[%d%.]+)%s+(-?[%d%.]+)%s+(-?[%d%.]+)%s*$"
         )
 
-        x, y, z = tonumber(x), tonumber(y), tonumber(z)
+        x = tonumber(x)
+        y = tonumber(y)
+        z = tonumber(z)
 
         if x and y and z then
             return x, y, z
         end
 
         print("Format: X Y Z")
+        print("Example: 62 50 -107")
     end
 end
 
@@ -69,27 +92,45 @@ for _, name in ipairs(thrusters) do
     end
 end
 
+print("Thrusters: " .. #thrusters)
+
 local targetX, targetY, targetZ = readTarget()
 
 print(("Target: %.1f %.1f %.1f"):format(
-    targetX, targetY, targetZ
+    targetX,
+    targetY,
+    targetZ
 ))
+
+local _, launchY = gps.locate(3, false)
+
+if not launchY then
+    error("GPS unavailable")
+end
+
+local takeoffY = launchY + TAKEOFF_HEIGHT
+
+print("Takeoff Y: " .. math.floor(takeoffY))
 
 write("Launch? y/n: ")
 
 if read():lower() ~= "y" then
+    print("Cancelled")
     return
 end
 
+local phase = "takeoff"
 local previousX, previousY, previousZ
 local previousTime
+
+print("Launched")
 
 while true do
     local x, y, z = gps.locate(3, false)
 
     if not x then
         stopAll()
-        error("GPS lost")
+        error("GPS lost - stopped")
     end
 
     local now = os.epoch("utc")
@@ -105,33 +146,66 @@ while true do
         end
     end
 
-    previousX, previousY, previousZ = x, y, z
+    previousX = x
+    previousY = y
+    previousZ = z
     previousTime = now
 
     local dx = targetX - x
     local dy = targetY - y
     local dz = targetZ - z
     local distance = length(dx, dy, dz)
-    local currentSpeed = length(velocityX, velocityY, velocityZ)
+    local speed = length(velocityX, velocityY, velocityZ)
 
-    -- Desired speed decreases near the target.
-    local desiredSpeed = math.min(MAX_SPEED, distance * 0.5)
+    local desiredVX, desiredVY, desiredVZ
 
-    local desiredVX = (dx / distance) * desiredSpeed
-    local desiredVY = (dy / distance) * desiredSpeed
-    local desiredVZ = (dz / distance) * desiredSpeed
+    if phase == "takeoff" then
+        -- Vertical ascent and braking at the selected height.
+        local altitudeError = takeoffY - y
 
-    -- Accelerate toward desired velocity; reverses thrust to brake.
+        desiredVX = 0
+        desiredVZ = 0
+        desiredVY = clamp(
+            altitudeError * 0.5,
+            -TAKEOFF_SPEED,
+            TAKEOFF_SPEED
+        )
+
+        if math.abs(altitudeError) <= 3
+            and math.abs(velocityY) <= STOP_SPEED then
+            phase = "cruise"
+            print("Cruise phase")
+        end
+    else
+        -- Cruise speed automatically decreases close to target.
+        if distance > 0.01 then
+            local desiredSpeed = math.min(MAX_SPEED, distance * 0.5)
+
+            desiredVX = (dx / distance) * desiredSpeed
+            desiredVY = (dy / distance) * desiredSpeed
+            desiredVZ = (dz / distance) * desiredSpeed
+        else
+            desiredVX = 0
+            desiredVY = 0
+            desiredVZ = 0
+        end
+
+        if distance <= ARRIVAL_RADIUS and speed <= STOP_SPEED then
+            stopAll()
+            print("Arrived - stopped")
+            break
+        end
+    end
+
+    -- Velocity correction: accelerates, brakes, and counters drift.
     local correctionX = desiredVX - velocityX
     local correctionY = desiredVY - velocityY
     local correctionZ = desiredVZ - velocityZ
-    local correctionLength = length(correctionX, correctionY, correctionZ)
-
-    if distance <= ARRIVAL_RADIUS and currentSpeed <= STOP_SPEED then
-        stopAll()
-        print("Arrived - stopped")
-        break
-    end
+    local correctionLength = length(
+        correctionX,
+        correctionY,
+        correctionZ
+    )
 
     if correctionLength > 0.01 then
         local power = clamp(
@@ -152,11 +226,15 @@ while true do
 
     term.setCursorPos(1, 8)
     term.clearLine()
-    write(("Distance: %.1f"):format(distance))
+    write("Phase: " .. phase)
 
     term.setCursorPos(1, 9)
     term.clearLine()
-    write(("Speed: %.1f"):format(currentSpeed))
+    write(("Distance: %.1f"):format(distance))
+
+    term.setCursorPos(1, 10)
+    term.clearLine()
+    write(("Speed: %.1f"):format(speed))
 
     os.sleep(UPDATE_INTERVAL)
 end
